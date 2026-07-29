@@ -1,0 +1,16 @@
+{
+  "name": "math-ai-tutor-fullstack",
+  "version": "1.0.0",
+  "description": "학생 수학 평가 및 AI 피드백 풀스택 앱",
+  "main": "api/index.js",
+  "scripts": {
+    "build": "cd frontend && npm install && npm run build",
+    "start": "node backend/server.js"
+  },
+  "dependencies": {
+    "@google/genai": "^0.1.1",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2"
+  }
+}
