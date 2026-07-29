@@ -358,50 +358,6 @@
       "createdAt": "2026-07-29T00:41:17.160Z"
     },
     {
-      "id": "sub_1785285642495",
-      "studentId": "st_1785285614025",
-      "problemId": "p3",
-      "problemTitle": "직사각형의 넓이 구하기",
-      "category": "다각형의 둘레와 넓이",
-      "grade": 5,
-      "submissionType": "canvas",
-      "userSolutionText": "",
-      "canvasImage": null,
-      "isCorrect": false,
-      "score": 10,
-      "stepAnalysis": [
-        {
-          "step": 1,
-          "text": "수식 세우기",
-          "status": "fail",
-          "note": "풀이 과정에 수식이나 주요 숫자가 부족합니다."
-        },
-        {
-          "step": 2,
-          "text": "답안 도출",
-          "status": "fail",
-          "note": "답안을 도출하지 못했습니다."
-        }
-      ],
-      "errorConcept": "개념 미숙 및 문제 조건 해석 필요",
-      "praise": "💪 괜찮아요! 어려워 보이는 문제도 천천히 한 단계씩 풀면 할 수 있어요.",
-      "feedback": "문제에 쓰인 개념을 다시 한번 복습해보세요. 해설: 직사각형의 넓이 = (가로) × (세로) = $12 \\times 8 = 96\\text{cm}^2$",
-      "recommendedProblem": {
-        "id": "p2",
-        "grade": 4,
-        "category": "삼각형",
-        "title": "삼각형의 세 각의 크기의 합",
-        "question": "어떤 삼각형의 두 각의 크기가 각각 $50^\\circ$ 와 $70^\\circ$ 입니다. 남은 한 각의 크기는 몇 도인지 구하고 풀이 과정을 쓰세요.",
-        "standardAnswer": "60",
-        "unit": "도",
-        "explanation": "삼각형의 세 내각의 합은 $180^\\circ$ 입니다. $180 - (50 + 70) = 180 - 120 = 60^\\circ$ 입니다.",
-        "hints": [
-          "삼각형의 모든 각을 더하면 몇 도가 되나요?"
-        ]
-      },
-      "createdAt": "2026-07-29T00:40:42.495Z"
-    },
-    {
       "id": "sub_1785285629158",
       "studentId": "st_1785285614025",
       "problemId": "p2",

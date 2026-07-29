@@ -97,6 +97,19 @@ function writeDB(data) {
   } catch (err) {}
 }
 
+function formatDate(isoString) {
+  if (!isoString) return '-';
+  const d = new Date(isoString);
+  if (isNaN(d.getTime())) return isoString;
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  const hours = String(d.getHours()).padStart(2, '0');
+  const minutes = String(d.getMinutes()).padStart(2, '0');
+  const seconds = String(d.getSeconds()).padStart(2, '0');
+  return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+}
+
 app.post('/api/auth/login', (req, res) => {
   const { school, name, grade } = req.body;
   if (!school || !name || !grade) {
@@ -379,7 +392,7 @@ app.get('/api/admin/stats', (req, res) => {
   });
 });
 
-// 👩‍🏫 교사 대시보드 (제출 이력 개별/전체 삭제 기능 완비)
+// 👩‍🏫 교사 대시보드
 app.all('/admin', (req, res) => {
   const reqPassword = req.method === 'POST' ? req.body.password : req.query.password;
   const isAuth = reqPassword === ADMIN_PASSWORD;
@@ -494,7 +507,7 @@ app.all('/admin', (req, res) => {
     </div>
   </div>
 
-  <!-- 제출 이력 관리 (삭제 버튼 기능 탑재) -->
+  <!-- 제출 이력 관리 -->
   <div class="p-6 rounded-3xl bg-slate-900 border border-slate-800 space-y-4">
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
       <div>
@@ -537,7 +550,7 @@ app.all('/admin', (req, res) => {
                 </span>
               </td>
               <td class="py-3.5 px-4 font-black text-sm ${s.isCorrect ? 'text-emerald-400' : 'text-rose-400'}">${s.score}점</td>
-              <td class="py-3.5 px-4 text-slate-500 text-[11px]">${new Date(s.createdAt).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}</td>
+              <td class="py-3.5 px-4 text-slate-300 font-mono text-[11px]">${formatDate(s.createdAt)}</td>
               <td class="py-3.5 px-4 text-right">
                 <button
                   onclick="deleteSingleSubmission('${s.id}')"
