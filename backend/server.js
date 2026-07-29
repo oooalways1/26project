@@ -33,108 +33,66 @@ const defaultData = {
   students: [],
   submissions: [],
   problems: [
-    // 4학년 단원별 명품 교육과정 문제 세트
+    {
+      id: 'p4_3',
+      grade: 4,
+      category: '3. 곱셈과 나눗셈',
+      title: '사과 상자 곱셈 문제',
+      question: '사과가 한 상자에 20개씩 들어있습니다. 31상자에 들어 있는 사과는 모두 몇 개인지 구하고, 풀이 과정을 적으세요.',
+      standardAnswer: '620개',
+      explanation: '$20 \\times 31 = 620$개 입니다.',
+      hints: ['(한 상자 사과 수) × (상자 수) 공식을 이용해 계산하세요.']
+    },
     {
       id: 'p4_1',
       grade: 4,
       category: '1. 큰 수',
-      title: '큰 수의 십진법 크기 비교',
-      question: '우리나라의 인구는 약 $51800000$ 명입니다. 이 수를 읽어보고, 10만 이 $518$개 모인 수와 같은지 풀이 과정을 적으세요.',
-      standardAnswer: '5180만',
-      explanation: '51800000은 오천백팔십만으로 읽으며, 10만 이 518개 모인 수와 같습니다.',
-      hints: ['만 단위로 자르고 0의 개수를 카운트해 보세요.']
+      title: '큰 수의 크기 읽기',
+      question: '우리나라의 인구는 약 $51800000$ 명입니다. 이 수를 한글로 읽어보고, 10만 이 몇 개 모인 수인지 풀이 과정을 쓰세요.',
+      standardAnswer: '오천백팔십만, 518개',
+      explanation: '51800000은 오천백팔십만으로 읽으며, 10만이 518개 모인 수입니다.',
+      hints: ['만 단위로 자르고 계산해 보세요.']
     },
     {
       id: 'p4_2',
       grade: 4,
       category: '2. 각도',
       title: '시계 바늘이 이루는 각도',
-      question: '오후 $3$시 정각에 시침과 분침이 이루는 직각의 크기는 몇 도일까요? 또 $4$시 정각이 되면 시침과 분침이 이루는 작은 쪽의 각도는 몇 도인지 풀이 과정을 쓰세요.',
-      standardAnswer: '120',
+      question: '오후 $3$시 정각에 시침과 분침이 이루는 각도는 몇 도일까요? 또 $4$시 정각이 되면 두 바늘이 이루는 작은 쪽의 각도는 몇 도인지 구하세요.',
+      standardAnswer: '90도, 120도',
       unit: '도',
-      explanation: '3시 정각은 $90^\\circ$, 4시 정각은 시계 한 칸($30^\\circ$)이 더 늘어나 $120^\\circ$가 됩니다.',
-      hints: ['시계의 1시간 간격은 몇 도일까요? (360도 ÷ 12)']
-    },
-    {
-      id: 'p4_3',
-      grade: 4,
-      category: '3. 곱셈과 나눗셈',
-      title: '세 자리 수 ÷ 두 자리 수',
-      question: '사과 $385$개를 한 상자에 $12$개씩 담으려고 합니다. 사과를 모두 담기 위해 필요한 상자의 수와 남는 사과의 수를 구하고 풀이 과정을 적으세요.',
-      standardAnswer: '33상자, 1개 남음',
-      explanation: '$385 \\div 12 = 32$ (몫) 남은 사과 $1$개이므로, 남은 사과까지 담으려면 총 $33$개의 상자가 필요합니다.',
-      hints: ['나눗셈의 몫과 나머지를 구한 뒤, 남은 사과 1개도 상자에 담아야 하는지 생각하세요.']
+      explanation: '3시는 $90^\\circ$, 4시는 시계 한 칸($30^\\circ$)이 늘어나 $120^\\circ$가 됩니다.',
+      hints: ['시계의 1시간 간격은 30도입니다.']
     },
     {
       id: 'p4_4',
       grade: 4,
       category: '4. 분수의 덧셈과 뺄셈',
-      title: '대분수의 덧셈',
-      question: '수진이는 오렌지 주스를 $1 \\frac{3}{5} \\text{L}$, 민주는 $2 \\frac{4}{5} \\text{L}$ 마셨습니다. 두 사람이 마신 오렌지 주스는 모두 몇 $\\text{L}$ 인지 풀이 과정을 적으세요.',
-      standardAnswer: '4와 2/5',
-      unit: 'L',
-      explanation: '$1 \\frac{3}{5} + 2 \\frac{4}{5} = (1+2) + \\frac{3+4}{5} = 3 + \\frac{7}{5} = 4 \\frac{2}{5} \\text{L}$ 입니다.',
-      hints: ['자연수는 자연수끼리, 분수는 분수끼리 더한 뒤 대분수로 정리하세요.']
+      title: '오렌지 주스 대분수의 덧셈',
+      question: '수진이는 오렌지 주스를 $1 \\frac{3}{5} \\text{L}$, 민주는 $2 \\frac{4}{5} \\text{L}$ 마셨습니다. 두 사람이 마신 주스는 모두 몇 $\\text{L}$ 인지 풀이 과정을 적으세요.',
+      standardAnswer: '4와 2/5L',
+      explanation: '$1 \\frac{3}{5} + 2 \\frac{4}{5} = 4 \\frac{2}{5} \\text{L}$ 입니다.',
+      hints: ['자연수는 자연수끼리, 분수는 분수끼리 더하세요.']
     },
     {
       id: 'p4_5',
       grade: 4,
       category: '5. 삼각형',
       title: '이등변삼각형의 각도 구하기',
-      question: '두 변의 길이가 같은 이등변삼각형이 있습니다. 꼭짓점의 각도가 $70^\\circ$ 일 때, 길이가 같은 두 변에 접한 두 밑각의 크기는 각각 몇 도인지 풀이 과정을 쓰세요.',
-      standardAnswer: '55',
-      unit: '도',
-      explanation: '삼각형 내각의 합 $180^\\circ - 70^\\circ = 110^\\circ$, 이등변삼각형의 두 밑각은 같으므로 $110^\\circ \\div 2 = 55^\\circ$ 입니다.',
-      hints: ['이등변삼각형의 두 밑각의 크기는 서로 같습니다.']
+      question: '두 변의 길이가 같은 이등변삼각형이 있습니다. 꼭짓점의 각도가 $70^\\circ$ 일 때, 나머지 두 밑각의 크기는 각각 몇 도인지 풀이 과정을 쓰세요.',
+      standardAnswer: '55도',
+      explanation: '$(180^\\circ - 70^\\circ) \\div 2 = 55^\\circ$ 입니다.',
+      hints: ['이등변삼각형의 두 밑각은 같습니다.']
     },
     {
       id: 'p4_6',
       grade: 4,
       category: '6. 소수의 덧셈과 뺄셈',
-      title: '소수 두 자리 수의 덧셈',
-      question: '달리기 연습에서 영희는 $2.45\\text{km}$를 달렸고, 철수는 영희보다 $1.78\\text{km}$를 더 달렸습니다. 철수가 달린 거리는 몇 $\\text{km}$ 인지 풀이 과정을 작성하세요.',
-      standardAnswer: '4.23',
-      unit: 'km',
+      title: '달리기 거리 소수 덧셈',
+      question: '영희는 $2.45\\text{km}$를 달렸고, 철수는 영희보다 $1.78\\text{km}$를 더 달렸습니다. 철수가 달린 거리는 모두 몇 $\\text{km}$ 인지 구하고 풀이 과정을 적으세요.',
+      standardAnswer: '4.23km',
       explanation: '$2.45 + 1.78 = 4.23\\text{km}$ 입니다.',
-      hints: ['소수점 위치를 맞춰서 세로셈으로 더해보세요.']
-    },
-
-    // 3학년 대표 문제
-    {
-      id: 'p3_1',
-      grade: 3,
-      category: '분수와 소수',
-      title: '단위 분수의 크기 비교',
-      question: '다음 두 분수 중에서 더 큰 분수를 찾고, 그 이유를 설명해 보세요.\n$$\\frac{1}{4} \\quad \\text{vs} \\quad \\frac{1}{6}$$',
-      standardAnswer: '1/4',
-      explanation: '전체를 똑같이 4조각으로 나누었을 때 한 조각이, 6조각으로 나누었을 때 한 조각보다 큽니다. 분모가 작은 분수가 더 큽니다.',
-      hints: ['피자 한 판을 4명이 나누어 먹을 때와 6명이 나누어 먹을 때 한 사람이 먹는 양을 생각해 보세요.']
-    },
-
-    // 5학년 대표 문제
-    {
-      id: 'p5_1',
-      grade: 5,
-      category: '다각형의 둘레와 넓이',
-      title: '직사각형의 넓이 구하기',
-      question: '가로의 길이가 $12\\text{cm}$ 이고 세로의 길이가 $8\\text{cm}$ 인 직사각형이 있습니다. 이 직사각형의 넓이를 구하고 풀이 과정을 작성하세요.',
-      standardAnswer: '96',
-      unit: 'cm²',
-      explanation: '직사각형의 넓이 = (가로) × (세로) = $12 \\times 8 = 96\\text{cm}^2$',
-      hints: ['직사각형의 넓이 구하는 공식을 써 보세요.']
-    },
-
-    // 6학년 대표 문제
-    {
-      id: 'p6_1',
-      grade: 6,
-      category: '비와 비율',
-      title: '백분율 구하기',
-      question: '전체 $50$개의 사과 중에서 빨간 사과가 $18$개 있습니다. 빨간 사과는 전체 사과의 몇 $\%$ 인지 구하고 풀이 과정을 적으세요.',
-      standardAnswer: '36',
-      unit: '%',
-      explanation: '비율 = $\\frac{18}{50} = 0.36$, 백분율 = $0.36 \\times 100 = 36\\%$',
-      hints: ['(부분) ÷ (전체) × 100 공식을 사용해 보세요.']
+      hints: ['소수점 위치를 맞춰서 더해보세요.']
     }
   ]
 };
@@ -165,35 +123,31 @@ function writeDB(data) {
   } catch (err) {}
 }
 
-// 🎲 Gemini AI 교육과정 맞춤 문제 자율 생성 API
+// 🎲 선택한 단원에 부합하는 구체적인 실생활 수학 문제 AI 자율 출제 API
 app.post('/api/problems/generate', async (req, res) => {
-  const { grade } = req.body;
+  const { grade, category } = req.body;
   const numGrade = Number(grade) || 4;
+  const targetCategory = category || '곱셈과 나눗셈';
 
-  const curriculumTopics = {
-    1: '100까지의 수, 한자리 수의 덧셈과 뺄셈, 여러 가지 모양',
-    2: '세 자리 수, 덧셈과 뺄셈, 곱셈구구, 길이 재기, 시계 보기',
-    3: '덧셈과 뺄셈, 평면도형, 나눗셈, 곱셈, 분수와 소수, 길이와 시간',
-    4: '큰 수, 각도, 곱셈과 나눗셈, 평면도형의 이동, 분수의 덧셈과 뺄셈, 삼각형, 소수의 덧셈과 뺄셈, 사각형, 꺾은선그래프, 다각형',
-    5: '자연수의 혼합 계산, 약수와 배수, 약분과 통분, 분수의 곱셈, 다각형의 둘레와 넓이, 소수의 곱셈, 직육면체, 평균과 가능성',
-    6: '분수의 나눗셈, 각기둥과 각뿔, 소수의 나눗셈, 비와 비율, 원의 넓이, 비례식과 비례배분, 공간과 입체, 직육면체의 부피'
-  };
-
-  const topic = curriculumTopics[numGrade] || curriculumTopics[4];
   let newProblem = null;
 
   if (aiClient && apiKey) {
     try {
       const prompt = `
-당신은 초등 수학 교과서 저자입니다. 초등학교 ${numGrade}학년 수학 교육과정(${topic}) 단원에 딱 부합하는 아주 명확하고 참신한 수학 문제 1개를 출제하세요.
+당신은 대한민국 초등학교 전문 수학 교육 AI 튜터입니다.
+초등학교 ${numGrade}학년 [${targetCategory}] 단원에 딱 부합하는 아주 구체적이고 흥미로운 실생활 문장제 수학 문제 1개를 출제하세요.
+
+[예시 문제 스타일]
+- 예: "사과가 한 상자에 20개씩 들어있습니다. 31상자에 들어 있는 사과는 모두 몇 개인지 구하고, 풀이 과정을 적으세요."
+- 예: "연필 한 자루에 500원인 연필 15자루와 800원인 공책 6권을 샀습니다. 전체 가격은 얼마인지 구하세요."
 
 [응답 포맷 (JSON 전용)]
 {
-  "title": "문제 제목 (예: 4학년 큰 수 응용 문제)",
-  "category": "단원명 (예: 큰 수)",
-  "question": "학생이 풀 수 있도록 명확하고 재미있는 문제 지문 작성 (LaTeX 수식 포함 가능)",
+  "title": "단원에 맞는 명확한 문제 제목",
+  "category": "${targetCategory}",
+  "question": "학생이 읽고 계산 및 손글씨/텍스트로 풀 수 있는 구체적인 문제 지문 작성",
   "standardAnswer": "표준 정답",
-  "explanation": "친절한 수학 해설"
+  "explanation": "학생 눈높이에 맞춘 친절한 해설"
 }
 `;
       const response = await aiClient.models.generateContent({
@@ -206,12 +160,12 @@ app.post('/api/problems/generate', async (req, res) => {
       newProblem = {
         id: 'ai_gen_' + Date.now(),
         grade: numGrade,
-        category: parsed.category || `${numGrade}학년 단원`,
-        title: parsed.title || `${numGrade}학년 AI 새로운 문제`,
+        category: targetCategory,
+        title: parsed.title || `${targetCategory} AI 추천 문제`,
         question: parsed.question,
         standardAnswer: parsed.standardAnswer || '자유 풀이',
-        explanation: parsed.explanation || 'AI가 출제한 정밀 해설입니다.',
-        hints: ['문제를 잘 읽고 단계별로 풀어보세요!'],
+        explanation: parsed.explanation || 'AI가 생성한 정밀 해설입니다.',
+        hints: ['문제를 차근차근 읽고 계산해 보세요!'],
         isAiGenerated: true,
         createdAt: new Date().toISOString()
       };
@@ -224,12 +178,12 @@ app.post('/api/problems/generate', async (req, res) => {
     newProblem = {
       id: 'ai_gen_' + Date.now(),
       grade: numGrade,
-      category: `${numGrade}학년 단원`,
-      title: `${numGrade}학년 도전 수학 문제`,
-      question: `${numGrade}학년 교육과정 단원 문제를 읽고 풀이 과정을 적어보세요!`,
-      standardAnswer: '풀이참조',
-      explanation: '생각하는 힘을 길러주는 문제 세트입니다.',
-      hints: ['차근차근 풀어보세요!'],
+      category: targetCategory,
+      title: `${targetCategory} 실생활 문제`,
+      question: `사과가 한 상자에 20개씩 31상자에 들어있습니다. 모두 몇 개인지 구하고 풀이 과정을 쓰세요.`,
+      standardAnswer: '620개',
+      explanation: '20 × 31 = 620개 입니다.',
+      hints: ['곱셈식을 만들어 풀이해 보세요!'],
       isAiGenerated: true,
       createdAt: new Date().toISOString()
     };

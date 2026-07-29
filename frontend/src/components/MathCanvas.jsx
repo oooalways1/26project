@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Eraser, RotateCcw, Trash2, Send, Sparkles, Edit3, MessageSquare } from 'lucide-react';
+import { Eraser, RotateCcw, Trash2, Send, Sparkles, MessageSquare, HelpCircle } from 'lucide-react';
 import TextSolver from './TextSolver';
 
 export default function MathCanvas({ problem, onSubmit, evaluating }) {
@@ -11,7 +11,6 @@ export default function MathCanvas({ problem, onSubmit, evaluating }) {
   const [history, setHistory] = useState([]);
   const [hasContent, setHasContent] = useState(false);
 
-  // 추가 텍스트 입력 소견
   const [solutionText, setSolutionText] = useState('');
 
   useEffect(() => {
@@ -137,9 +136,52 @@ export default function MathCanvas({ problem, onSubmit, evaluating }) {
   const colors = ['#ffffff', '#38bdf8', '#f472b6', '#facc15', '#4ade80'];
 
   return (
-    <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-4 sm:p-6 shadow-2xl space-y-4">
-      {/* 풀이 방식 선택 탭 (통합 둘 다 가능 / 손글씨만 / 텍스트만) */}
-      <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-slate-800">
+    <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-4 sm:p-6 shadow-2xl space-y-5">
+      {/* 📌 구체적인 AI 출제 문제 지문 카드 */}
+      <div className="p-5 rounded-2xl bg-gradient-to-r from-slate-950 via-indigo-950/40 to-slate-950 border border-indigo-500/30 space-y-2 shadow-inner">
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <span className="w-6 h-6 rounded-lg bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 flex items-center justify-center text-xs font-bold">
+              Q
+            </span>
+            <span className="text-xs font-extrabold text-indigo-300 uppercase tracking-wider">
+              {problem.category || '수학 문제'}
+            </span>
+          </div>
+          <span className="text-xs font-bold text-slate-400 bg-slate-900 px-3 py-1 rounded-full border border-slate-800">
+            {problem.grade}학년
+          </span>
+        </div>
+
+        <h3 className="text-lg font-black text-white">{problem.title}</h3>
+        <p className="text-sm sm:text-base text-slate-100 font-medium leading-relaxed bg-slate-900/80 p-3.5 rounded-xl border border-slate-800/80 whitespace-pre-wrap">
+          {problem.question}
+        </p>
+
+        {problem.hints && problem.hints.length > 0 && (
+          <p className="text-xs text-amber-300/90 flex items-center gap-1.5 pt-1">
+            <HelpCircle className="w-3.5 h-3.5 text-amber-400" />
+            <span>힌트: {problem.hints[0]}</span>
+          </p>
+        )}
+      </div>
+
+      {/* 문제 직접 사진 등록 시 출력 */}
+      {problem.problemImage && (
+        <div className="p-3 rounded-2xl bg-slate-950 border border-purple-500/30">
+          <p className="text-xs text-purple-300 font-bold mb-2 flex items-center gap-1">
+            📷 업로드된 문제 사진 (Gemini AI 시각 자율 채점)
+          </p>
+          <img
+            src={problem.problemImage}
+            alt="문제 사진"
+            className="max-h-64 rounded-xl border border-slate-800 object-contain mx-auto shadow-md"
+          />
+        </div>
+      )}
+
+      {/* 풀이 방식 선택 탭 */}
+      <div className="flex flex-wrap items-center justify-between gap-2 pb-1 border-b border-slate-800">
         <div className="flex items-center gap-1.5">
           <button
             onClick={() => setInputMode('both')}
@@ -166,27 +208,9 @@ export default function MathCanvas({ problem, onSubmit, evaluating }) {
             ⌨️ 텍스트만 사용
           </button>
         </div>
-
-        <span className="text-xs text-indigo-300 font-bold bg-indigo-500/10 px-3 py-1 rounded-full border border-indigo-500/30">
-          {problem.title} ({problem.grade}학년)
-        </span>
       </div>
 
-      {/* 문제 사진 등록 시 출력 */}
-      {problem.problemImage && (
-        <div className="p-3 rounded-2xl bg-slate-950 border border-purple-500/30">
-          <p className="text-xs text-purple-300 font-bold mb-2 flex items-center gap-1">
-            📷 업로드된 문제 사진 (Gemini AI 시각 자율 채점)
-          </p>
-          <img
-            src={problem.problemImage}
-            alt="문제 사진"
-            className="max-h-64 rounded-xl border border-slate-800 object-contain mx-auto shadow-md"
-          />
-        </div>
-      )}
-
-      {/* 손글씨 캔버스 영역 (both 또는 canvasOnly) */}
+      {/* 손글씨 캔버스 영역 */}
       {(inputMode === 'both' || inputMode === 'canvasOnly') && (
         <div className="space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-3 bg-slate-950/80 p-2.5 rounded-2xl border border-slate-800">
@@ -235,7 +259,7 @@ export default function MathCanvas({ problem, onSubmit, evaluating }) {
             <canvas
               ref={canvasRef}
               width={800}
-              height={400}
+              height={380}
               onMouseDown={startDrawing}
               onMouseMove={draw}
               onMouseUp={stopDrawing}
@@ -247,14 +271,14 @@ export default function MathCanvas({ problem, onSubmit, evaluating }) {
             />
             {!hasContent && (
               <div className="absolute bottom-3 right-3 text-xs text-slate-500 pointer-events-none bg-slate-900/80 px-3 py-1.5 rounded-xl border border-slate-800">
-                ✍️ 마우스/터치로 수식과 풀이과정을 자유롭게 그려보세요!
+                ✍️ 마우스/터치로 위 지문의 풀이과정을 그려보세요!
               </div>
             )}
           </div>
         </div>
       )}
 
-      {/* 추가 텍스트/수식 설명 입력란 (both 또는 textOnly) */}
+      {/* 텍스트/수식 설명 입력란 */}
       {(inputMode === 'both' || inputMode === 'textOnly') && (
         <div className="space-y-2 pt-1">
           <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
@@ -263,7 +287,7 @@ export default function MathCanvas({ problem, onSubmit, evaluating }) {
           </label>
           <textarea
             rows={3}
-            placeholder="추가적인 답안이나 수식 풀이 과정을 텍스트로 적어보세요. (예: 1+1=2 입니다)"
+            placeholder="추가적인 답안이나 수식 풀이 과정을 텍스트로 적어보세요. (예: 20 × 31 = 620개입니다)"
             value={solutionText}
             onChange={(e) => setSolutionText(e.target.value)}
             className="w-full px-4 py-3 bg-slate-950 border border-slate-700/80 rounded-2xl text-white placeholder-slate-500 focus:outline-none focus:border-purple-500 text-sm leading-relaxed"

@@ -40,11 +40,11 @@ export async function fetchProblems(grade = null) {
   return data.problems;
 }
 
-export async function generateAiProblem(grade) {
+export async function generateAiProblem(grade, category = null) {
   const res = await fetch(`${API_BASE_URL}/api/problems/generate`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ grade })
+    body: JSON.stringify({ grade, category })
   });
   const data = await res.json();
   if (!res.ok) {
