@@ -2,11 +2,11 @@ const API_BASE_URL = import.meta.env.PROD
   ? ''
   : 'http://localhost:5000';
 
-export async function loginStudent(school, name, grade, classGroup = 1, password = '') {
+export async function loginStudent(credentials) {
   const res = await fetch(`${API_BASE_URL}/api/auth/login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ school, name, grade, classGroup, password })
+    body: JSON.stringify(credentials)
   });
   const data = await res.json();
   if (!res.ok) {
@@ -15,11 +15,11 @@ export async function loginStudent(school, name, grade, classGroup = 1, password
   return data.student;
 }
 
-export async function registerStudent(school, grade, classGroup, name, password) {
+export async function registerStudent(registrationData) {
   const res = await fetch(`${API_BASE_URL}/api/auth/register`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ school, grade, classGroup, name, password })
+    body: JSON.stringify(registrationData)
   });
   const data = await res.json();
   if (!res.ok) {

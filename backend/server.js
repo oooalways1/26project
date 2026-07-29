@@ -114,33 +114,36 @@ app.get('/api/submissions', (req, res) => {
   return res.json({ submissions: subs });
 });
 
+// 1. 학생 회원가입 API (아이디, 비밀번호, 학교, 학년, 반, 이름)
 app.post('/api/auth/register', (req, res) => {
-  const { school, grade, classGroup, name, password } = req.body;
-  if (!school || !grade || !classGroup || !name || !password) {
-    return res.status(400).json({ error: '학교, 학년, 반, 이름, 비밀번호를 모두 입력해 주세요.' });
+  const { username, password, school, grade, classGroup, name } = req.body;
+  if (!username || !password || !school || !grade || !classGroup || !name) {
+    return res.status(400).json({ error: '아이디, 비밀번호, 학교, 학년, 반, 이름을 모두 입력해 주세요.' });
   }
 
   const db = readDB();
+  const normUsername = username.trim().toLowerCase();
   const normSchool = school.trim();
   const normName = name.trim();
   const numGrade = Number(grade);
   const numClass = Number(classGroup);
 
   const existing = db.students.find(
-    (s) => s.school === normSchool && s.grade === numGrade && s.classGroup === numClass && s.name === normName
+    (s) => (s.username && s.username.toLowerCase() === normUsername)
   );
 
   if (existing) {
-    return res.status(400).json({ error: '이미 동일한 정보로 가입된 학생이 존재합니다. 로그인해 주세요.' });
+    return res.status(400).json({ error: '이미 사용 중인 아이디입니다. 다른 아이디를 입력해 주세요.' });
   }
 
   const newStudent = {
     id: 'st_' + Date.now(),
+    username: normUsername,
+    password: password.trim(),
     school: normSchool,
     grade: numGrade,
     classGroup: numClass,
     name: normName,
-    password: password.trim(),
     stars: 0,
     totalSolved: 0,
     correctCount: 0,
@@ -153,44 +156,60 @@ app.post('/api/auth/register', (req, res) => {
   return res.json({ success: true, student: newStudent });
 });
 
+// 2. 학생 아이디/비밀번호 로그인 API
 app.post('/api/auth/login', (req, res) => {
-  const { school, grade, classGroup, name, password } = req.body;
-  if (!school || !name || !grade) {
-    return res.status(400).json({ error: '초등학교명, 이름, 학년을 입력해 주세요.' });
-  }
-
+  const { username, password, school, name, grade } = req.body;
   const db = readDB();
-  const normSchool = school.trim();
-  const normName = name.trim();
-  const numGrade = Number(grade);
-  const numClass = classGroup ? Number(classGroup) : null;
 
-  let student = db.students.find(
-    (s) => s.school === normSchool && s.name === normName && s.grade === numGrade && (!numClass || s.classGroup === numClass)
-  );
+  // 1) 아이디/비밀번호 로그인 처리
+  if (username && password) {
+    const normUsername = username.trim().toLowerCase();
+    const student = db.students.find(
+      (s) => s.username && s.username.toLowerCase() === normUsername
+    );
 
-  if (student) {
-    if (student.password && password && student.password !== password.trim()) {
+    if (!student) {
+      return res.status(401).json({ error: '존재하지 않는 아이디입니다. 회원가입 후 이용해 주세요.' });
+    }
+
+    if (student.password !== password.trim()) {
       return res.status(401).json({ error: '비밀번호가 올바르지 않습니다.' });
     }
-  } else {
-    student = {
-      id: 'st_' + Date.now(),
-      school: normSchool,
-      grade: numGrade,
-      classGroup: numClass || 1,
-      name: normName,
-      password: password ? password.trim() : '0000',
-      stars: 0,
-      totalSolved: 0,
-      correctCount: 0,
-      createdAt: new Date().toISOString()
-    };
-    db.students.push(student);
-    writeDB(db);
+
+    return res.json({ success: true, student });
   }
 
-  return res.json({ success: true, student });
+  // 2) 기존 하위 호환 로그인
+  if (school && name && grade) {
+    const normSchool = school.trim();
+    const normName = name.trim();
+    const numGrade = Number(grade);
+
+    let student = db.students.find(
+      (s) => s.school === normSchool && s.name === normName && s.grade === numGrade
+    );
+
+    if (!student) {
+      student = {
+        id: 'st_' + Date.now(),
+        username: 'user_' + Date.now().toString().slice(-4),
+        password: password ? password.trim() : '1234',
+        school: normSchool,
+        grade: numGrade,
+        classGroup: 1,
+        name: normName,
+        stars: 0,
+        totalSolved: 0,
+        correctCount: 0,
+        createdAt: new Date().toISOString()
+      };
+      db.students.push(student);
+      writeDB(db);
+    }
+    return res.json({ success: true, student });
+  }
+
+  return res.status(400).json({ error: '아이디와 비밀번호를 입력해 주세요.' });
 });
 
 app.get('/api/problems', (req, res) => {

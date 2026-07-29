@@ -1,23 +1,67 @@
 import React, { useState } from 'react';
-import { School, User, GraduationCap, Sparkles, ArrowRight, CheckCircle2, Lock, KeyRound, UserPlus, LogIn, Users } from 'lucide-react';
-import { registerStudent } from '../services/api';
+import { School, User, GraduationCap, Sparkles, ArrowRight, CheckCircle2, Lock, KeyRound, UserPlus, LogIn, Users, AtSign } from 'lucide-react';
+import { registerStudent, loginStudent } from '../services/api';
 
 export default function LoginScreen({ onLoginSuccess }) {
   const [mode, setMode] = useState('login'); // 'login' | 'register'
 
-  // 폼 상태
+  // 로그인 폼
+  const [loginId, setLoginId] = useState('');
+  const [loginPassword, setLoginPassword] = useState('');
+
+  // 회원가입 폼
+  const [regId, setRegId] = useState('');
+  const [regPassword, setRegPassword] = useState('');
+  const [regConfirmPassword, setRegConfirmPassword] = useState('');
   const [school, setSchool] = useState('');
   const [grade, setGrade] = useState(4);
   const [classGroup, setClassGroup] = useState(1);
   const [name, setName] = useState('');
-  const [password, setPassword] = useState('');
-  
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
 
-  const handleSubmit = async (e) => {
+  const handleLoginSubmit = async (e) => {
     e.preventDefault();
+    if (!loginId.trim()) {
+      setError('아이디를 입력해 주세요.');
+      return;
+    }
+    if (!loginPassword.trim()) {
+      setError('비밀번호를 입력해 주세요.');
+      return;
+    }
+
+    setError('');
+    setLoading(true);
+    try {
+      const student = await loginStudent({
+        username: loginId.trim(),
+        password: loginPassword.trim()
+      });
+      onLoginSuccess(student);
+    } catch (err) {
+      setError(err.message || '로그인에 실패했습니다.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRegisterSubmit = async (e) => {
+    e.preventDefault();
+    if (!regId.trim()) {
+      setError('회원가입할 아이디를 입력해 주세요.');
+      return;
+    }
+    if (!regPassword.trim()) {
+      setError('비밀번호를 입력해 주세요.');
+      return;
+    }
+    if (regPassword !== regConfirmPassword) {
+      setError('비밀번호와 비밀번호 확인이 일치하지 않습니다. 다시 확인해 주세요.');
+      return;
+    }
     if (!school.trim()) {
       setError('초등학교 이름을 입력해 주세요.');
       return;
@@ -32,18 +76,23 @@ export default function LoginScreen({ onLoginSuccess }) {
     setLoading(true);
 
     try {
-      if (mode === 'register') {
-        if (!password.trim()) {
-          throw new Error('비밀번호를 입력해 주세요.');
-        }
-        await registerStudent(school.trim(), grade, classGroup, name.trim(), password.trim());
-        setSuccessMsg('🎉 회원가입이 성공적으로 완료되었습니다! 방금 만든 정보로 로그인해 보세요.');
-        setMode('login');
-      } else {
-        await onLoginSuccess(school.trim(), name.trim(), grade, classGroup, password.trim());
-      }
+      await registerStudent({
+        username: regId.trim(),
+        password: regPassword.trim(),
+        school: school.trim(),
+        grade: Number(grade),
+        classGroup: Number(classGroup),
+        name: name.trim()
+      });
+
+      setSuccessMsg(`🎉 회원가입 성공! [${regId.trim()}] 아이디로 로그인해 주세요.`);
+      setLoginId(regId.trim());
+      setLoginPassword('');
+      setRegPassword('');
+      setRegConfirmPassword('');
+      setMode('login');
     } catch (err) {
-      setError(err.message || '처리 중 오류가 발생했습니다.');
+      setError(err.message || '회원가입 중 오류가 발생했습니다.');
     } finally {
       setLoading(false);
     }
@@ -72,7 +121,7 @@ export default function LoginScreen({ onLoginSuccess }) {
             수학 탐험가 <span className="bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">{mode === 'login' ? '로그인' : '회원가입'}</span>
           </h1>
           <p className="mt-2 text-slate-400 text-sm">
-            {mode === 'login' ? '학생 정보와 비밀번호를 입력하고 탐험을 시작하세요!' : '학교, 학년, 반, 비밀번호를 입력해 회원가입하세요!'}
+            {mode === 'login' ? '아이디와 비밀번호를 입력하고 탐험을 시작하세요!' : '새 계정을 만들고 비밀번호를 2번 확인하여 가입하세요!'}
           </p>
         </div>
 
@@ -106,125 +155,197 @@ export default function LoginScreen({ onLoginSuccess }) {
         </div>
 
         <div className="bg-slate-900/80 backdrop-blur-xl border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl shadow-indigo-950/50">
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {error && (
-              <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs font-semibold text-center">
-                {error}
-              </div>
-            )}
-
-            {successMsg && (
-              <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs font-semibold text-center">
-                {successMsg}
-              </div>
-            )}
-
-            {/* 초등학교 이름 */}
-            <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1.5 uppercase tracking-wider">
-                <School className="w-4 h-4 inline mr-1 text-indigo-400" /> 초등학교 이름
-              </label>
-              <input
-                type="text"
-                placeholder="예: 대구OO초등학교"
-                value={school}
-                onChange={(e) => setSchool(e.target.value)}
-                className="w-full px-4 py-3 bg-slate-950/70 border border-slate-700/80 rounded-2xl text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 transition text-sm"
-                required
-              />
+          {error && (
+            <div className="p-3.5 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs font-bold text-center mb-4 leading-relaxed">
+              {error}
             </div>
+          )}
 
-            {/* 학년 선택 (1~6학년) */}
-            <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1.5 uppercase tracking-wider">
-                <GraduationCap className="w-4 h-4 inline mr-1 text-cyan-400" /> 학년 선택
-              </label>
-              <div className="grid grid-cols-6 gap-1.5">
-                {[1, 2, 3, 4, 5, 6].map((g) => (
-                  <button
-                    key={g}
-                    type="button"
-                    onClick={() => setGrade(g)}
-                    className={`py-2 rounded-xl text-xs font-bold transition flex flex-col items-center justify-center border ${
-                      grade === g
-                        ? 'bg-gradient-to-br from-indigo-500 to-purple-600 border-indigo-400 text-white shadow-md'
-                        : 'bg-slate-950/60 border-slate-800 text-slate-400 hover:bg-slate-800 hover:text-slate-200'
-                    }`}
-                  >
-                    <span>{g}학년</span>
-                  </button>
-                ))}
-              </div>
+          {successMsg && (
+            <div className="p-3.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs font-bold text-center mb-4 leading-relaxed">
+              {successMsg}
             </div>
+          )}
 
-            {/* 반 선택 (1~15반) */}
-            <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1.5 uppercase tracking-wider">
-                <Users className="w-4 h-4 inline mr-1 text-emerald-400" /> 반 선택
-              </label>
-              <select
-                value={classGroup}
-                onChange={(e) => setClassGroup(Number(e.target.value))}
-                className="w-full px-4 py-3 bg-slate-950/70 border border-slate-700/80 rounded-2xl text-white focus:outline-none focus:border-indigo-500 transition text-sm"
+          {/* 1. 로그인 폼 (아이디 + 비밀번호) */}
+          {mode === 'login' ? (
+            <form onSubmit={handleLoginSubmit} className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-1.5 uppercase tracking-wider">
+                  <AtSign className="w-4 h-4 inline mr-1 text-indigo-400" /> 학생 아이디 (ID)
+                </label>
+                <input
+                  type="text"
+                  placeholder="가입한 아이디 입력"
+                  value={loginId}
+                  onChange={(e) => setLoginId(e.target.value)}
+                  className="w-full px-4 py-3.5 bg-slate-950/70 border border-slate-700/80 rounded-2xl text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 transition text-sm"
+                  required
+                  autofocus
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-1.5 uppercase tracking-wider">
+                  <KeyRound className="w-4 h-4 inline mr-1 text-pink-400" /> 비밀번호 (Password)
+                </label>
+                <input
+                  type="password"
+                  placeholder="비밀번호 입력"
+                  value={loginPassword}
+                  onChange={(e) => setLoginPassword(e.target.value)}
+                  className="w-full px-4 py-3.5 bg-slate-950/70 border border-slate-700/80 rounded-2xl text-white placeholder-slate-500 focus:outline-none focus:border-pink-500 focus:ring-2 focus:ring-pink-500/30 transition text-sm tracking-wider"
+                  required
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full mt-4 py-4 px-6 rounded-2xl bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 hover:from-indigo-600 hover:to-pink-600 text-white font-bold text-sm shadow-xl shadow-indigo-500/25 transition transform active:scale-95 flex items-center justify-center gap-2 group disabled:opacity-50"
               >
-                {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15].map((cls) => (
-                  <option key={cls} value={cls} className="bg-slate-900 text-white">
-                    {cls}반
-                  </option>
-                ))}
-              </select>
-            </div>
+                {loading ? (
+                  <span>로그인 중...</span>
+                ) : (
+                  <>
+                    <span>수학 탐험 시작하기</span>
+                    <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                  </>
+                )}
+              </button>
+            </form>
+          ) : (
+            /* 2. 회원가입 폼 (아이디 + 비밀번호 + 비밀번호확인 + 학교 + 학년 + 반 + 이름) */
+            <form onSubmit={handleRegisterSubmit} className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-1.5 uppercase tracking-wider">
+                  <AtSign className="w-4 h-4 inline mr-1 text-indigo-400" /> 사용할 아이디 (ID)
+                </label>
+                <input
+                  type="text"
+                  placeholder="영문, 숫자 가능 (예: student1)"
+                  value={regId}
+                  onChange={(e) => setRegId(e.target.value)}
+                  className="w-full px-4 py-3 bg-slate-950/70 border border-slate-700/80 rounded-2xl text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 transition text-sm"
+                  required
+                />
+              </div>
 
-            {/* 학생 이름 */}
-            <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1.5 uppercase tracking-wider">
-                <User className="w-4 h-4 inline mr-1 text-purple-400" /> 학생 이름
-              </label>
-              <input
-                type="text"
-                placeholder="예: 홍길동"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className="w-full px-4 py-3 bg-slate-950/70 border border-slate-700/80 rounded-2xl text-white placeholder-slate-500 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/30 transition text-sm"
-                required
-              />
-            </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1.5 uppercase tracking-wider">
+                    <KeyRound className="w-4 h-4 inline mr-1 text-pink-400" /> 비밀번호
+                  </label>
+                  <input
+                    type="password"
+                    placeholder="비밀번호 설정"
+                    value={regPassword}
+                    onChange={(e) => setRegPassword(e.target.value)}
+                    className="w-full px-4 py-3 bg-slate-950/70 border border-slate-700/80 rounded-2xl text-white placeholder-slate-500 focus:outline-none focus:border-pink-500 text-sm tracking-wider"
+                    required
+                  />
+                </div>
 
-            {/* 비밀번호 */}
-            <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1.5 uppercase tracking-wider">
-                <KeyRound className="w-4 h-4 inline mr-1 text-pink-400" /> 비밀번호 {mode === 'login' ? '(설정한 비밀번호)' : '(신규 비밀번호 설정)'}
-              </label>
-              <input
-                type="password"
-                placeholder={mode === 'login' ? '비밀번호 입력' : '사용할 비밀번호 (예: 1234)'}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-4 py-3 bg-slate-950/70 border border-slate-700/80 rounded-2xl text-white placeholder-slate-500 focus:outline-none focus:border-pink-500 focus:ring-2 focus:ring-pink-500/30 transition text-sm tracking-wider"
-                required
-              />
-            </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1.5 uppercase tracking-wider">
+                    <KeyRound className="w-4 h-4 inline mr-1 text-emerald-400" /> 비밀번호 확인
+                  </label>
+                  <input
+                    type="password"
+                    placeholder="비밀번호 한번 더 입력"
+                    value={regConfirmPassword}
+                    onChange={(e) => setRegConfirmPassword(e.target.value)}
+                    className="w-full px-4 py-3 bg-slate-950/70 border border-slate-700/80 rounded-2xl text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 text-sm tracking-wider"
+                    required
+                  />
+                </div>
+              </div>
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full mt-4 py-3.5 px-6 rounded-2xl bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 hover:from-indigo-600 hover:to-pink-600 text-white font-bold text-sm shadow-xl shadow-indigo-500/25 transition transform active:scale-95 flex items-center justify-center gap-2 group disabled:opacity-50"
-            >
-              {loading ? (
-                <span>{mode === 'login' ? '로그인 중...' : '회원가입 중...'}</span>
-              ) : (
-                <>
-                  <span>{mode === 'login' ? '수학 탐험 시작하기' : '학생 회원가입 완료'}</span>
-                  <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                </>
-              )}
-            </button>
-          </form>
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-1.5 uppercase tracking-wider">
+                  <School className="w-4 h-4 inline mr-1 text-indigo-400" /> 초등학교 이름
+                </label>
+                <input
+                  type="text"
+                  placeholder="예: 대구OO초등학교"
+                  value={school}
+                  onChange={(e) => setSchool(e.target.value)}
+                  className="w-full px-4 py-3 bg-slate-950/70 border border-slate-700/80 rounded-2xl text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 text-sm"
+                  required
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1.5 uppercase tracking-wider">
+                    <GraduationCap className="w-4 h-4 inline mr-1 text-cyan-400" /> 학년
+                  </label>
+                  <select
+                    value={grade}
+                    onChange={(e) => setGrade(Number(e.target.value))}
+                    className="w-full px-4 py-3 bg-slate-950/70 border border-slate-700/80 rounded-2xl text-white focus:outline-none focus:border-cyan-500 text-sm"
+                  >
+                    {[1, 2, 3, 4, 5, 6].map((g) => (
+                      <option key={g} value={g} className="bg-slate-900 text-white">
+                        {g}학년
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1.5 uppercase tracking-wider">
+                    <Users className="w-4 h-4 inline mr-1 text-purple-400" /> 반
+                  </label>
+                  <select
+                    value={classGroup}
+                    onChange={(e) => setClassGroup(Number(e.target.value))}
+                    className="w-full px-4 py-3 bg-slate-950/70 border border-slate-700/80 rounded-2xl text-white focus:outline-none focus:border-purple-500 text-sm"
+                  >
+                    {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15].map((cls) => (
+                      <option key={cls} value={cls} className="bg-slate-900 text-white">
+                        {cls}반
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-1.5 uppercase tracking-wider">
+                  <User className="w-4 h-4 inline mr-1 text-amber-400" /> 학생 실명
+                </label>
+                <input
+                  type="text"
+                  placeholder="예: 홍길동"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  className="w-full px-4 py-3 bg-slate-950/70 border border-slate-700/80 rounded-2xl text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 text-sm"
+                  required
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full mt-4 py-3.5 px-6 rounded-2xl bg-gradient-to-r from-purple-500 via-pink-500 to-rose-500 hover:from-purple-600 hover:to-rose-600 text-white font-bold text-sm shadow-xl shadow-purple-500/25 transition transform active:scale-95 flex items-center justify-center gap-2 group disabled:opacity-50"
+              >
+                {loading ? (
+                  <span>가입 처리 중...</span>
+                ) : (
+                  <>
+                    <span>학생 회원가입 완료</span>
+                    <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                  </>
+                )}
+              </button>
+            </form>
+          )}
 
           <div className="mt-5 pt-4 border-t border-slate-800/80 text-center">
             <p className="text-xs text-slate-400 flex items-center justify-center gap-3">
               <span className="flex items-center gap-1"><CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" /> Gemini AI 멀티모달 채점</span>
-              <span className="flex items-center gap-1"><CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" /> 백엔드 영구 DB</span>
+              <span className="flex items-center gap-1"><CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" /> 안전 암호화 가입</span>
             </p>
           </div>
         </div>

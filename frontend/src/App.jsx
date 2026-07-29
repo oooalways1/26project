@@ -6,7 +6,7 @@ import MathCanvas from './components/MathCanvas';
 import FeedbackModal from './components/FeedbackModal';
 import HistoryDashboard from './components/HistoryDashboard';
 import ProblemUploadModal from './components/ProblemUploadModal';
-import { loginStudent, fetchProblems, evaluateSolution } from './services/api';
+import { fetchProblems, evaluateSolution } from './services/api';
 
 export default function App() {
   const [student, setStudent] = useState(null);
@@ -55,8 +55,7 @@ export default function App() {
     }
   };
 
-  const handleLogin = async (school, name, grade, classGroup, password) => {
-    const loggedStudent = await loginStudent(school, name, grade, classGroup, password);
+  const handleLoginSuccess = (loggedStudent) => {
     setStudent(loggedStudent);
     setSelectedGrade(loggedStudent.grade || 4);
     localStorage.setItem('math_ai_student', JSON.stringify(loggedStudent));
@@ -104,7 +103,7 @@ export default function App() {
   };
 
   if (!student) {
-    return <LoginScreen onLoginSuccess={handleLogin} />;
+    return <LoginScreen onLoginSuccess={handleLoginSuccess} />;
   }
 
   return (
@@ -119,7 +118,6 @@ export default function App() {
       <main className="flex-1 max-w-7xl w-full mx-auto p-4 lg:p-8 space-y-6">
         {activeTab === 'solve' ? (
           <div className="space-y-6">
-            {/* 문제 직접 업로드 모달 열기 버튼 */}
             <div className="flex justify-end">
               <button
                 onClick={() => setShowUploadModal(true)}
@@ -165,14 +163,12 @@ export default function App() {
         )}
       </main>
 
-      {/* 피드백 모달 */}
       <FeedbackModal
         isOpen={showFeedbackModal}
         onClose={() => setShowFeedbackModal(false)}
         evaluation={currentEvaluation}
       />
 
-      {/* 문제 업로드 모달 */}
       <ProblemUploadModal
         isOpen={showUploadModal}
         onClose={() => setShowUploadModal(false)}
