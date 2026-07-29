@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Eraser, RotateCcw, Trash2, Send, Sparkles, AlertCircle } from 'lucide-react';
+import { Eraser, RotateCcw, Trash2, Send, Sparkles } from 'lucide-react';
 import TextSolver from './TextSolver';
 
 export default function MathCanvas({ problem, onSubmit, evaluating }) {
@@ -115,7 +115,6 @@ export default function MathCanvas({ problem, onSubmit, evaluating }) {
   const handleCanvasSubmit = () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    // 캔버스 압축 전송 (jpeg / 0.7 퀄리티로 용량 1/5 축소)
     const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
     onSubmit({
       submissionType: 'canvas',
@@ -127,52 +126,46 @@ export default function MathCanvas({ problem, onSubmit, evaluating }) {
   const colors = ['#ffffff', '#38bdf8', '#f472b6', '#facc15', '#4ade80'];
 
   return (
-    <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-4 sm:p-6 shadow-2xl space-y-5">
-      <div className="space-y-3 pb-4 border-b border-slate-800">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
-            <span className="px-3 py-1 rounded-full text-xs font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
-              {problem.category || '단원 평가'}
-            </span>
-            <span className="text-xs text-slate-400 font-semibold">{problem.grade}학년</span>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setActiveTab('canvas')}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition ${
-                activeTab === 'canvas' ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              ✍️ 손글씨 캔버스
-            </button>
-            <button
-              onClick={() => setActiveTab('text')}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition ${
-                activeTab === 'text' ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              ⌨️ 텍스트/수식 입력
-            </button>
-          </div>
+    <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-4 sm:p-6 shadow-2xl space-y-4">
+      {/* 탭 스위치 & 문제 직접 사진만 출력 */}
+      <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-slate-800">
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setActiveTab('canvas')}
+            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition ${
+              activeTab === 'canvas' ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            ✍️ 손글씨 캔버스
+          </button>
+          <button
+            onClick={() => setActiveTab('text')}
+            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition ${
+              activeTab === 'text' ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            ⌨️ 텍스트/수식 입력
+          </button>
         </div>
 
-        <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight">{problem.title}</h2>
-        <p className="text-sm text-slate-300 whitespace-pre-wrap leading-relaxed">{problem.question}</p>
-
-        {problem.problemImage && (
-          <div className="mt-3 p-3 rounded-2xl bg-slate-950 border border-purple-500/30">
-            <p className="text-xs text-purple-300 font-bold mb-2 flex items-center gap-1">
-              📷 업로드된 문제 사진 (Gemini AI 시각 자율 채점)
-            </p>
-            <img
-              src={problem.problemImage}
-              alt="문제 사진"
-              className="max-h-64 rounded-xl border border-slate-800 object-contain mx-auto shadow-md"
-            />
-          </div>
-        )}
+        <span className="text-xs text-indigo-300 font-bold bg-indigo-500/10 px-3 py-1 rounded-full border border-indigo-500/30">
+          {problem.title} ({problem.grade}학년)
+        </span>
       </div>
+
+      {/* 문제 사진이 등록되어 있을 때만 깔끔하게 출력 */}
+      {problem.problemImage && (
+        <div className="p-3 rounded-2xl bg-slate-950 border border-purple-500/30">
+          <p className="text-xs text-purple-300 font-bold mb-2 flex items-center gap-1">
+            📷 업로드된 문제 사진 (Gemini AI 시각 자율 채점)
+          </p>
+          <img
+            src={problem.problemImage}
+            alt="문제 사진"
+            className="max-h-64 rounded-xl border border-slate-800 object-contain mx-auto shadow-md"
+          />
+        </div>
+      )}
 
       {activeTab === 'canvas' ? (
         <div className="space-y-4">
