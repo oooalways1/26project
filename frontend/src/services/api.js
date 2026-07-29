@@ -1,65 +1,89 @@
-const API_BASE = '/api';
+const API_BASE_URL = import.meta.env.PROD
+  ? ''
+  : 'http://localhost:5000';
 
-export async function loginStudent(school, name, grade) {
-  const response = await fetch(`${API_BASE}/auth/login`, {
+export async function loginStudent(school, name, grade, classGroup = 1, password = '') {
+  const res = await fetch(`${API_BASE_URL}/api/auth/login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ school, name, grade })
+    body: JSON.stringify({ school, name, grade, classGroup, password })
   });
-  if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(errorData.error || '로그인에 실패했습니다.');
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.error || '로그인에 실패했습니다.');
   }
-  return await response.json();
+  return data.student;
 }
 
-export async function fetchProblems(grade) {
-  const url = grade ? `${API_BASE}/problems?grade=${grade}` : `${API_BASE}/problems`;
-  const response = await fetch(url);
-  if (!response.ok) {
-    throw new Error('문제 목록을 가져오지 못했습니다.');
+export async function registerStudent(school, grade, classGroup, name, password) {
+  const res = await fetch(`${API_BASE_URL}/api/auth/register`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ school, grade, classGroup, name, password })
+  });
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.error || '회원가입에 실패했습니다.');
   }
-  return await response.json();
+  return data.student;
 }
 
-export async function uploadProblem(payload) {
-  const response = await fetch(`${API_BASE}/problems`, {
+export async function fetchProblems(grade = null) {
+  const url = grade
+    ? `${API_BASE_URL}/api/problems?grade=${grade}`
+    : `${API_BASE_URL}/api/problems`;
+  const res = await fetch(url);
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.error || '문제 목록을 가져오는데 실패했습니다.');
+  }
+  return data.problems;
+}
+
+export async function fetchSubmissions(studentId = null) {
+  try {
+    const url = studentId
+      ? `${API_BASE_URL}/api/submissions?studentId=${studentId}`
+      : `${API_BASE_URL}/api/submissions`;
+    const res = await fetch(url);
+    const data = await res.json();
+    return data.submissions || [];
+  } catch (e) {
+    return [];
+  }
+}
+
+export async function uploadProblem(problemData) {
+  const res = await fetch(`${API_BASE_URL}/api/problems`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(problemData)
+  });
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.error || '문제 업로드에 실패했습니다.');
+  }
+  return data.problem;
+}
+
+export async function evaluateSolution(payload) {
+  const res = await fetch(`${API_BASE_URL}/api/evaluate`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload)
   });
-  if (!response.ok) {
-    const err = await response.json();
-    throw new Error(err.error || '문제 업로드에 실패했습니다.');
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.error || '채점에 실패했습니다.');
   }
-  return await response.json();
+  return data;
 }
 
-export async function evaluateSubmission(payload) {
-  const response = await fetch(`${API_BASE}/evaluate`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload)
-  });
-  if (!response.ok) {
-    const err = await response.json();
-    throw new Error(err.error || '채점 평가 중 오류가 발생했습니다.');
+export async function fetchAdminStats(password) {
+  const res = await fetch(`${API_BASE_URL}/api/admin/stats?password=${encodeURIComponent(password)}`);
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.error || '대시보드 통계를 가져오는데 실패했습니다.');
   }
-  return await response.json();
-}
-
-export async function fetchSubmissions(studentId) {
-  const response = await fetch(`${API_BASE}/submissions/student/${studentId}`);
-  if (!response.ok) {
-    throw new Error('제출 이력을 가져오지 못했습니다.');
-  }
-  return await response.json();
-}
-
-export async function fetchAdminStats() {
-  const response = await fetch(`${API_BASE}/admin/stats`);
-  if (!response.ok) {
-    throw new Error('교사 대시보드 통계를 불러오지 못했습니다.');
-  }
-  return await response.json();
+  return data;
 }

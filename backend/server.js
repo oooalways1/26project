@@ -78,59 +78,109 @@ const defaultData = {
   ]
 };
 
+let inMemoryDB = null;
+
 function readDB() {
+  if (inMemoryDB) return inMemoryDB;
   try {
     if (!fs.existsSync(DB_FILE)) {
       fs.writeFileSync(DB_FILE, JSON.stringify(defaultData, null, 2), 'utf-8');
+      inMemoryDB = defaultData;
       return defaultData;
     }
     const data = fs.readFileSync(DB_FILE, 'utf-8');
-    return JSON.parse(data);
+    inMemoryDB = JSON.parse(data);
+    return inMemoryDB;
   } catch (err) {
+    inMemoryDB = defaultData;
     return defaultData;
   }
 }
 
 function writeDB(data) {
+  inMemoryDB = data;
   try {
     fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2), 'utf-8');
   } catch (err) {}
 }
 
-function formatDate(isoString) {
-  if (!isoString) return '-';
-  const d = new Date(isoString);
-  if (isNaN(d.getTime())) return isoString;
-  const year = d.getFullYear();
-  const month = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  const hours = String(d.getHours()).padStart(2, '0');
-  const minutes = String(d.getMinutes()).padStart(2, '0');
-  const seconds = String(d.getSeconds()).padStart(2, '0');
-  return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
-}
+app.get('/api/submissions', (req, res) => {
+  const { studentId } = req.query;
+  const db = readDB();
+  let subs = db.submissions;
+  if (studentId) {
+    subs = subs.filter((s) => s.studentId === studentId);
+  }
+  return res.json({ submissions: subs });
+});
 
-app.post('/api/auth/login', (req, res) => {
-  const { school, name, grade } = req.body;
-  if (!school || !name || !grade) {
-    return res.status(400).json({ error: '초등학교명, 이름, 학년을 모두 입력해 주세요.' });
+app.post('/api/auth/register', (req, res) => {
+  const { school, grade, classGroup, name, password } = req.body;
+  if (!school || !grade || !classGroup || !name || !password) {
+    return res.status(400).json({ error: '학교, 학년, 반, 이름, 비밀번호를 모두 입력해 주세요.' });
   }
 
   const db = readDB();
-  const normalizedSchool = school.trim();
-  const normalizedName = name.trim();
+  const normSchool = school.trim();
+  const normName = name.trim();
   const numGrade = Number(grade);
+  const numClass = Number(classGroup);
 
-  let student = db.students.find(
-    (s) => s.school === normalizedSchool && s.name === normalizedName && s.grade === numGrade
+  const existing = db.students.find(
+    (s) => s.school === normSchool && s.grade === numGrade && s.classGroup === numClass && s.name === normName
   );
 
-  if (!student) {
+  if (existing) {
+    return res.status(400).json({ error: '이미 동일한 정보로 가입된 학생이 존재합니다. 로그인해 주세요.' });
+  }
+
+  const newStudent = {
+    id: 'st_' + Date.now(),
+    school: normSchool,
+    grade: numGrade,
+    classGroup: numClass,
+    name: normName,
+    password: password.trim(),
+    stars: 0,
+    totalSolved: 0,
+    correctCount: 0,
+    createdAt: new Date().toISOString()
+  };
+
+  db.students.push(newStudent);
+  writeDB(db);
+
+  return res.json({ success: true, student: newStudent });
+});
+
+app.post('/api/auth/login', (req, res) => {
+  const { school, grade, classGroup, name, password } = req.body;
+  if (!school || !name || !grade) {
+    return res.status(400).json({ error: '초등학교명, 이름, 학년을 입력해 주세요.' });
+  }
+
+  const db = readDB();
+  const normSchool = school.trim();
+  const normName = name.trim();
+  const numGrade = Number(grade);
+  const numClass = classGroup ? Number(classGroup) : null;
+
+  let student = db.students.find(
+    (s) => s.school === normSchool && s.name === normName && s.grade === numGrade && (!numClass || s.classGroup === numClass)
+  );
+
+  if (student) {
+    if (student.password && password && student.password !== password.trim()) {
+      return res.status(401).json({ error: '비밀번호가 올바르지 않습니다.' });
+    }
+  } else {
     student = {
       id: 'st_' + Date.now(),
-      school: normalizedSchool,
-      name: normalizedName,
+      school: normSchool,
       grade: numGrade,
+      classGroup: numClass || 1,
+      name: normName,
+      password: password ? password.trim() : '0000',
       stars: 0,
       totalSolved: 0,
       correctCount: 0,
@@ -148,7 +198,7 @@ app.get('/api/problems', (req, res) => {
   const { grade } = req.query;
   let problems = db.problems;
   if (grade) {
-    problems = problems.filter((p) => p.grade === Number(grade));
+    problems = problems.filter((p) => Number(p.grade) === Number(grade));
   }
   return res.json({ problems });
 });
@@ -298,6 +348,7 @@ app.post('/api/evaluate', async (req, res) => {
     studentSchool: student.school || '초등학교',
     studentName: student.name || '익명 학생',
     studentGrade: student.grade || 4,
+    studentClassGroup: student.classGroup || 1,
     problemId: problem.id,
     problemTitle: problem.title,
     category: problem.category,
@@ -335,7 +386,6 @@ app.post('/api/evaluate', async (req, res) => {
   });
 });
 
-// 제출 이력 개별 삭제 API
 app.delete('/api/admin/submissions/:id', (req, res) => {
   const { id } = req.params;
   const db = readDB();
@@ -347,13 +397,25 @@ app.delete('/api/admin/submissions/:id', (req, res) => {
   return res.json({ success: true, deleted: db.submissions.length < initialLength });
 });
 
-// 제출 이력 전체 초기화 API
 app.delete('/api/admin/submissions', (req, res) => {
   const db = readDB();
   db.submissions = [];
   writeDB(db);
   return res.json({ success: true });
 });
+
+function formatDate(isoString) {
+  if (!isoString) return '-';
+  const d = new Date(isoString);
+  if (isNaN(d.getTime())) return isoString;
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  const hours = String(d.getHours()).padStart(2, '0');
+  const minutes = String(d.getMinutes()).padStart(2, '0');
+  const seconds = String(d.getSeconds()).padStart(2, '0');
+  return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+}
 
 app.get('/api/admin/stats', (req, res) => {
   const { password } = req.query;
@@ -507,7 +569,6 @@ app.all('/admin', (req, res) => {
     </div>
   </div>
 
-  <!-- 제출 이력 관리 -->
   <div class="p-6 rounded-3xl bg-slate-900 border border-slate-800 space-y-4">
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
       <div>
@@ -528,7 +589,7 @@ app.all('/admin', (req, res) => {
         <thead>
           <tr class="border-b border-slate-800 text-slate-400 uppercase tracking-wider">
             <th class="py-3 px-4">학생명</th>
-            <th class="py-3 px-4">학교 / 학년</th>
+            <th class="py-3 px-4">학교 / 학년 / 반</th>
             <th class="py-3 px-4">제출 문제</th>
             <th class="py-3 px-4">채점 엔진</th>
             <th class="py-3 px-4">점수</th>
@@ -542,7 +603,7 @@ app.all('/admin', (req, res) => {
           ` : db.submissions.slice(0, 50).map(s => `
             <tr class="hover:bg-slate-800/40 transition">
               <td class="py-3.5 px-4 font-bold text-white">${s.studentName || '익명 학생'}</td>
-              <td class="py-3.5 px-4 text-slate-400">${s.studentSchool || '초등학교'} (${s.studentGrade || 4}학년)</td>
+              <td class="py-3.5 px-4 text-slate-400">${s.studentSchool || '초등학교'} (${s.studentGrade || 4}학년 ${s.studentClassGroup ? s.studentClassGroup + '반' : ''})</td>
               <td class="py-3.5 px-4 text-indigo-300 font-semibold">${s.problemTitle}</td>
               <td class="py-3.5 px-4">
                 <span class="px-2.5 py-1 rounded-full text-[11px] font-bold ${(s.engineUsed || '').includes('Gemini') ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30' : 'bg-amber-500/20 text-amber-300 border border-amber-500/30'}">
@@ -590,7 +651,7 @@ app.all('/admin', (req, res) => {
         if (data.success) {
           location.reload();
         } else {
-          alert('전체 삭제에 실패했습니다.');
+          alert('초기화 중 오류가 발생했습니다.');
         }
       } catch (e) {
         alert('초기화 중 오류가 발생했습니다.');
