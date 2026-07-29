@@ -1,15 +1,18 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Eraser, RotateCcw, Trash2, Send, Sparkles } from 'lucide-react';
+import { Eraser, RotateCcw, Trash2, Send, Sparkles, Edit3, MessageSquare } from 'lucide-react';
 import TextSolver from './TextSolver';
 
 export default function MathCanvas({ problem, onSubmit, evaluating }) {
-  const [activeTab, setActiveTab] = useState('canvas'); // 'canvas' | 'text'
+  const [inputMode, setInputMode] = useState('both'); // 'both' | 'canvasOnly' | 'textOnly'
   const canvasRef = useRef(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const [color, setColor] = useState('#ffffff');
   const [lineWidth, setLineWidth] = useState(4);
   const [history, setHistory] = useState([]);
   const [hasContent, setHasContent] = useState(false);
+
+  // 추가 텍스트 입력 소견
+  const [solutionText, setSolutionText] = useState('');
 
   useEffect(() => {
     initCanvas();
@@ -112,13 +115,21 @@ export default function MathCanvas({ problem, onSubmit, evaluating }) {
     }
   };
 
-  const handleCanvasSubmit = () => {
+  const handleCombinedSubmit = () => {
     const canvas = canvasRef.current;
-    if (!canvas) return;
-    const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+    let dataUrl = null;
+    if (canvas && hasContent) {
+      dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+    }
+
+    if (!dataUrl && !solutionText.trim()) {
+      alert('손글씨를 그리거나 텍스트 설명 중 하나 이상을 입력해 주세요!');
+      return;
+    }
+
     onSubmit({
-      submissionType: 'canvas',
-      solutionText: '',
+      submissionType: dataUrl ? 'canvas' : 'text',
+      solutionText: solutionText.trim(),
       canvasImage: dataUrl
     });
   };
@@ -127,24 +138,32 @@ export default function MathCanvas({ problem, onSubmit, evaluating }) {
 
   return (
     <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-4 sm:p-6 shadow-2xl space-y-4">
-      {/* 탭 스위치 & 문제 직접 사진만 출력 */}
+      {/* 풀이 방식 선택 탭 (통합 둘 다 가능 / 손글씨만 / 텍스트만) */}
       <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-slate-800">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
           <button
-            onClick={() => setActiveTab('canvas')}
-            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition ${
-              activeTab === 'canvas' ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-400 hover:text-slate-200'
+            onClick={() => setInputMode('both')}
+            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition ${
+              inputMode === 'both' ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-md' : 'bg-slate-800 text-slate-400 hover:text-slate-200'
             }`}
           >
-            ✍️ 손글씨 캔버스
+            ✨ 손글씨 + 텍스트 동시 입력 (추천)
           </button>
           <button
-            onClick={() => setActiveTab('text')}
-            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition ${
-              activeTab === 'text' ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-400 hover:text-slate-200'
+            onClick={() => setInputMode('canvasOnly')}
+            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition ${
+              inputMode === 'canvasOnly' ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-400 hover:text-slate-200'
             }`}
           >
-            ⌨️ 텍스트/수식 입력
+            ✍️ 손글씨만 사용
+          </button>
+          <button
+            onClick={() => setInputMode('textOnly')}
+            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition ${
+              inputMode === 'textOnly' ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            ⌨️ 텍스트만 사용
           </button>
         </div>
 
@@ -153,7 +172,7 @@ export default function MathCanvas({ problem, onSubmit, evaluating }) {
         </span>
       </div>
 
-      {/* 문제 사진이 등록되어 있을 때만 깔끔하게 출력 */}
+      {/* 문제 사진 등록 시 출력 */}
       {problem.problemImage && (
         <div className="p-3 rounded-2xl bg-slate-950 border border-purple-500/30">
           <p className="text-xs text-purple-300 font-bold mb-2 flex items-center gap-1">
@@ -167,7 +186,8 @@ export default function MathCanvas({ problem, onSubmit, evaluating }) {
         </div>
       )}
 
-      {activeTab === 'canvas' ? (
+      {/* 손글씨 캔버스 영역 (both 또는 canvasOnly) */}
+      {(inputMode === 'both' || inputMode === 'canvasOnly') && (
         <div className="space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-3 bg-slate-950/80 p-2.5 rounded-2xl border border-slate-800">
             <div className="flex items-center gap-2">
@@ -215,7 +235,7 @@ export default function MathCanvas({ problem, onSubmit, evaluating }) {
             <canvas
               ref={canvasRef}
               width={800}
-              height={420}
+              height={400}
               onMouseDown={startDrawing}
               onMouseMove={draw}
               onMouseUp={stopDrawing}
@@ -231,39 +251,46 @@ export default function MathCanvas({ problem, onSubmit, evaluating }) {
               </div>
             )}
           </div>
-
-          <div className="pt-2">
-            <button
-              onClick={handleCanvasSubmit}
-              disabled={evaluating}
-              className="w-full py-4 px-6 rounded-2xl bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 hover:from-indigo-600 hover:to-pink-600 text-white font-black text-base shadow-2xl shadow-indigo-500/30 transition transform active:scale-98 flex items-center justify-center gap-2 disabled:opacity-50"
-            >
-              {evaluating ? (
-                <>
-                  <Sparkles className="w-5 h-5 animate-spin" />
-                  <span>Gemini AI가 정밀 정오답 채점 중입니다...</span>
-                </>
-              ) : (
-                <>
-                  <Sparkles className="w-5 h-5 animate-bounce" />
-                  <span>✨ AI 채점 및 친절한 피드백 받기</span>
-                </>
-              )}
-            </button>
-          </div>
         </div>
-      ) : (
-        <TextSolver
-          onSubmit={(solText) =>
-            onSubmit({
-              submissionType: 'text',
-              solutionText: solText,
-              canvasImage: null
-            })
-          }
-          evaluating={evaluating}
-        />
       )}
+
+      {/* 추가 텍스트/수식 설명 입력란 (both 또는 textOnly) */}
+      {(inputMode === 'both' || inputMode === 'textOnly') && (
+        <div className="space-y-2 pt-1">
+          <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+            <MessageSquare className="w-4 h-4 text-purple-400" />
+            <span>⌨️ 텍스트/수식 설명 입력 (선택)</span>
+          </label>
+          <textarea
+            rows={3}
+            placeholder="추가적인 답안이나 수식 풀이 과정을 텍스트로 적어보세요. (예: 1+1=2 입니다)"
+            value={solutionText}
+            onChange={(e) => setSolutionText(e.target.value)}
+            className="w-full px-4 py-3 bg-slate-950 border border-slate-700/80 rounded-2xl text-white placeholder-slate-500 focus:outline-none focus:border-purple-500 text-sm leading-relaxed"
+          />
+        </div>
+      )}
+
+      {/* 제출 버튼 */}
+      <div className="pt-2">
+        <button
+          onClick={handleCombinedSubmit}
+          disabled={evaluating}
+          className="w-full py-4 px-6 rounded-2xl bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 hover:from-indigo-600 hover:to-pink-600 text-white font-black text-base shadow-2xl shadow-indigo-500/30 transition transform active:scale-98 flex items-center justify-center gap-2 disabled:opacity-50"
+        >
+          {evaluating ? (
+            <>
+              <Sparkles className="w-5 h-5 animate-spin" />
+              <span>Gemini AI가 정밀 정오답 채점 중입니다...</span>
+            </>
+          ) : (
+            <>
+              <Sparkles className="w-5 h-5 animate-bounce" />
+              <span>✨ AI 채점 및 친절한 피드백 받기</span>
+            </>
+          )}
+        </button>
+      </div>
     </div>
   );
 }
