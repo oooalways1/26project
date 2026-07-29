@@ -12,7 +12,6 @@ app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true }));
 
-// Vercel Serverless 환경에서는 /tmp 디렉토리 사용
 const isVercel = process.env.VERCEL === '1';
 const DB_FILE = isVercel ? '/tmp/db.json' : path.join(__dirname, 'db.json');
 const ADMIN_PASSWORD = '0000';
@@ -323,6 +322,26 @@ app.post('/api/evaluate', async (req, res) => {
   });
 });
 
+// 제출 이력 개별 삭제 API
+app.delete('/api/admin/submissions/:id', (req, res) => {
+  const { id } = req.params;
+  const db = readDB();
+  const initialLength = db.submissions.length;
+
+  db.submissions = db.submissions.filter((s) => s.id !== id);
+  writeDB(db);
+
+  return res.json({ success: true, deleted: db.submissions.length < initialLength });
+});
+
+// 제출 이력 전체 초기화 API
+app.delete('/api/admin/submissions', (req, res) => {
+  const db = readDB();
+  db.submissions = [];
+  writeDB(db);
+  return res.json({ success: true });
+});
+
 app.get('/api/admin/stats', (req, res) => {
   const { password } = req.query;
   if (password !== ADMIN_PASSWORD) {
@@ -360,7 +379,7 @@ app.get('/api/admin/stats', (req, res) => {
   });
 });
 
-// 👩‍🏫 교사 대시보드
+// 👩‍🏫 교사 대시보드 (제출 이력 개별/전체 삭제 기능 완비)
 app.all('/admin', (req, res) => {
   const reqPassword = req.method === 'POST' ? req.body.password : req.query.password;
   const isAuth = reqPassword === ADMIN_PASSWORD;
@@ -475,10 +494,21 @@ app.all('/admin', (req, res) => {
     </div>
   </div>
 
+  <!-- 제출 이력 관리 (삭제 버튼 기능 탑재) -->
   <div class="p-6 rounded-3xl bg-slate-900 border border-slate-800 space-y-4">
-    <div class="flex items-center justify-between">
-      <h3 class="text-base font-bold text-white">최근 풀이 제출 이력 (DB 실시간 출력)</h3>
-      <span class="text-xs text-slate-400">최근 50건 표시</span>
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <div>
+        <h3 class="text-base font-bold text-white">최근 풀이 제출 이력 (DB 실시간 출력)</h3>
+        <p class="text-xs text-slate-400">개별 이력 삭제 및 전체 제출 기록 초기화가 가능합니다.</p>
+      </div>
+      ${db.submissions.length > 0 ? `
+        <button
+          onclick="deleteAllSubmissions()"
+          class="px-3.5 py-2 rounded-xl bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-500/40 text-xs font-bold transition flex items-center gap-1.5 self-start sm:self-auto"
+        >
+          🗑️ 전체 이력 초기화 (삭제)
+        </button>
+      ` : ''}
     </div>
     <div class="overflow-x-auto">
       <table class="w-full text-left text-xs border-collapse">
@@ -490,11 +520,12 @@ app.all('/admin', (req, res) => {
             <th class="py-3 px-4">채점 엔진</th>
             <th class="py-3 px-4">점수</th>
             <th class="py-3 px-4">제출 일시</th>
+            <th class="py-3 px-4 text-right">관리</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-slate-800/60">
           ${db.submissions.length === 0 ? `
-            <tr><td colSpan="6" class="py-8 text-center text-slate-500">제출된 이력이 없습니다.</td></tr>
+            <tr><td colSpan="7" class="py-8 text-center text-slate-500">제출된 이력이 없습니다.</td></tr>
           ` : db.submissions.slice(0, 50).map(s => `
             <tr class="hover:bg-slate-800/40 transition">
               <td class="py-3.5 px-4 font-bold text-white">${s.studentName || '익명 학생'}</td>
@@ -507,12 +538,52 @@ app.all('/admin', (req, res) => {
               </td>
               <td class="py-3.5 px-4 font-black text-sm ${s.isCorrect ? 'text-emerald-400' : 'text-rose-400'}">${s.score}점</td>
               <td class="py-3.5 px-4 text-slate-500 text-[11px]">${new Date(s.createdAt).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}</td>
+              <td class="py-3.5 px-4 text-right">
+                <button
+                  onclick="deleteSingleSubmission('${s.id}')"
+                  class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-rose-500/20 text-slate-400 hover:text-rose-300 border border-slate-700 hover:border-rose-500/30 transition text-[11px]"
+                >
+                  🗑️ 삭제
+                </button>
+              </td>
             </tr>
           `).join('')}
         </tbody>
       </table>
     </div>
   </div>
+
+  <script>
+    async function deleteSingleSubmission(id) {
+      if (!confirm('이 제출 이력을 정말 삭제하시겠습니까?')) return;
+      try {
+        const res = await fetch('/api/admin/submissions/' + id, { method: 'DELETE' });
+        const data = await res.json();
+        if (data.success) {
+          location.reload();
+        } else {
+          alert('삭제에 실패했습니다.');
+        }
+      } catch (e) {
+        alert('삭제 중 오류가 발생했습니다.');
+      }
+    }
+
+    async function deleteAllSubmissions() {
+      if (!confirm('경고: 모든 학생의 제출 이력이 완전히 삭제됩니다! 정말 초기화하시겠습니까?')) return;
+      try {
+        const res = await fetch('/api/admin/submissions', { method: 'DELETE' });
+        const data = await res.json();
+        if (data.success) {
+          location.reload();
+        } else {
+          alert('전체 삭제에 실패했습니다.');
+        }
+      } catch (e) {
+        alert('초기화 중 오류가 발생했습니다.');
+      }
+    }
+  </script>
 </body>
 </html>
   `;
