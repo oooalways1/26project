@@ -8,8 +8,6 @@ export default function LoginScreen({ onLoginSuccess }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const quickSchools = ['서울초등학교', '빛가람초등학교', '중앙초등학교', '해돋이초등학교'];
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!school.trim()) {
@@ -73,24 +71,12 @@ export default function LoginScreen({ onLoginSuccess }) {
               </label>
               <input
                 type="text"
-                placeholder="예: 서울초등학교"
+                placeholder="예: 대구OO초등학교"
                 value={school}
                 onChange={(e) => setSchool(e.target.value)}
                 className="w-full px-4 py-3.5 bg-slate-950/70 border border-slate-700/80 rounded-2xl text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 transition text-sm"
                 required
               />
-              <div className="mt-2 flex flex-wrap gap-1.5">
-                {quickSchools.map((sch) => (
-                  <button
-                    key={sch}
-                    type="button"
-                    onClick={() => setSchool(sch)}
-                    className="text-xs px-2.5 py-1 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-slate-400 hover:text-indigo-300 border border-slate-700/50 transition"
-                  >
-                    +{sch}
-                  </button>
-                ))}
-              </div>
             </div>
 
             <div>
