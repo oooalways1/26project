@@ -114,7 +114,6 @@ app.get('/api/submissions', (req, res) => {
   return res.json({ submissions: subs });
 });
 
-// 1. 학생 회원가입 API (아이디, 비밀번호, 학교, 학년, 반, 이름)
 app.post('/api/auth/register', (req, res) => {
   const { username, password, school, grade, classGroup, name } = req.body;
   if (!username || !password || !school || !grade || !classGroup || !name) {
@@ -156,12 +155,10 @@ app.post('/api/auth/register', (req, res) => {
   return res.json({ success: true, student: newStudent });
 });
 
-// 2. 학생 아이디/비밀번호 로그인 API
 app.post('/api/auth/login', (req, res) => {
   const { username, password, school, name, grade } = req.body;
   const db = readDB();
 
-  // 1) 아이디/비밀번호 로그인 처리
   if (username && password) {
     const normUsername = username.trim().toLowerCase();
     const student = db.students.find(
@@ -179,7 +176,6 @@ app.post('/api/auth/login', (req, res) => {
     return res.json({ success: true, student });
   }
 
-  // 2) 기존 하위 호환 로그인
   if (school && name && grade) {
     const normSchool = school.trim();
     const normName = name.trim();
@@ -226,7 +222,7 @@ app.post('/api/problems', (req, res) => {
   const { title, grade, category, questionText, problemImage, standardAnswer, explanation } = req.body;
 
   if (!title || (!questionText && !problemImage)) {
-    return res.status(400).json({ error: '문제 제목과 지문(또는 이미지)을 입력해 주세요.' });
+    return res.status(400).json({ error: '문제 제목과 사진(또는 지문)을 입력해 주세요.' });
   }
 
   const db = readDB();
@@ -235,11 +231,11 @@ app.post('/api/problems', (req, res) => {
     title: title.trim(),
     grade: Number(grade) || 4,
     category: category ? category.trim() : '직접 업로드 문제',
-    question: questionText ? questionText.trim() : '아래 사진/이미지 문제를 읽고 풀이해 보세요.',
+    question: questionText ? questionText.trim() : '업로드된 문제 이미지(사진)를 읽고 풀이하세요.',
     problemImage: problemImage || null,
-    standardAnswer: standardAnswer ? standardAnswer.trim() : '자유풀이',
-    explanation: explanation ? explanation.trim() : '선생님이 직접 등록하신 문제입니다.',
-    hints: ['문제를 꼼꼼히 읽고 풀이 과정을 적어보세요.'],
+    standardAnswer: standardAnswer || 'AI 자율인식',
+    explanation: explanation || 'Gemini Vision AI가 문제 이미지를 직접 해석하여 정답 판단 및 피드백을 제공합니다.',
+    hints: ['사진 속 문제를 꼼꼼히 읽고 풀이 과정을 적어보세요.'],
     isCustom: true,
     createdAt: new Date().toISOString()
   };
@@ -250,7 +246,7 @@ app.post('/api/problems', (req, res) => {
   return res.json({ success: true, problem: newProblem });
 });
 
-// Gemini AI 멀티모달 채점 API
+// Gemini AI 멀티모달 비전 채점 API (문제 이미지 사진 자율 인지 포함)
 app.post('/api/evaluate', async (req, res) => {
   const { studentId, problemId, submissionType, userSolutionText, canvasImage } = req.body;
 
@@ -273,27 +269,30 @@ app.post('/api/evaluate', async (req, res) => {
   const targetModels = ['gemini-flash-latest', 'gemini-2.0-flash', 'gemini-2.5-flash-lite'];
 
   if (aiClient && apiKey) {
+    const hasProblemImage = !!(problem.problemImage && problem.problemImage.startsWith('data:image'));
+
     const promptText = `
 당신은 대한민국 초등학교 전문 수학 교육 AI 튜터입니다.
-학생(${student.name}, ${student.grade}학년)의 수학 문제 풀이를 정밀 채점하고 친절한 피드백을 제공하세요.
+학생(${student.name}, ${student.grade}학년)의 수학 문제 풀이를 시각적(Vision AI)으로 정밀 채점하고 친절한 피드백을 제공하세요.
 
 [문제 정보]
 - 제목: ${problem.title} (${problem.category})
 - 학년: ${problem.grade}학년
-- 문제 지문: ${problem.question}
+- 문제 지문/설명: ${problem.question}
+${hasProblemImage ? '- 🔥 [중요]: 첨부된 문제 사진(Problem Image)의 수식과 질문을 직접 시각적으로 읽어낸 후, 정답과 해설을 AI가 스스로 추론하세요!' : ''}
 - 표준 정답: ${problem.standardAnswer}
 - 표준 해설: ${problem.explanation}
 
 [학생 제출 내용]
 - 제출 형식: ${submissionType === 'canvas' ? '손글씨 캔버스 이미지' : '수식/텍스트'}
-- 텍스트 입력: ${userSolutionText || '(이미지/캔버스 확인)'}
+- 텍스트 입력: ${userSolutionText || '(아래 학생 손글씨 캔버스 이미지 확인)'}
 
 [응답 포맷 (JSON 전용)]
 {
   "isCorrect": true/false,
   "score": 0~100 사이의 점수,
   "stepAnalysis": [
-    { "step": 1, "text": "문제 조건 및 수식 파악", "status": "pass"/"fail", "note": "설명..." },
+    { "step": 1, "text": "문제 사진 및 조건 파악", "status": "pass"/"fail", "note": "설명..." },
     { "step": 2, "text": "계산 과정 및 공식 적용", "status": "pass"/"fail", "note": "설명..." },
     { "step": 3, "text": "최종 답안 도출", "status": "pass"/"fail", "note": "설명..." }
   ],
@@ -305,19 +304,21 @@ app.post('/api/evaluate', async (req, res) => {
 
     const contents = [promptText];
 
+    // 1. 등록된 문제 이미지 사진 첨부 (Vision AI 읽기용)
+    if (hasProblemImage) {
+      const pBase64 = problem.problemImage.replace(/^data:image\/\w+;base64,/, '');
+      contents.push({ inlineData: { mimeType: 'image/png', data: pBase64 } });
+    }
+
+    // 2. 학생 손글씨 캔버스 풀이 이미지 첨부
     if (submissionType === 'canvas' && canvasImage && canvasImage.startsWith('data:image')) {
       const base64Data = canvasImage.replace(/^data:image\/\w+;base64,/, '');
       contents.push({ inlineData: { mimeType: 'image/png', data: base64Data } });
     }
 
-    if (problem.problemImage && problem.problemImage.startsWith('data:image')) {
-      const pBase64 = problem.problemImage.replace(/^data:image\/\w+;base64,/, '');
-      contents.push({ inlineData: { mimeType: 'image/png', data: pBase64 } });
-    }
-
     for (const modelName of targetModels) {
       try {
-        console.log(`🤖 Gemini AI [${modelName}] 호출 중...`);
+        console.log(`🤖 Gemini AI [${modelName}] 비전 채점 호출 중...`);
         const response = await aiClient.models.generateContent({
           model: modelName,
           contents: contents,
@@ -327,7 +328,7 @@ app.post('/api/evaluate', async (req, res) => {
         const textRes = response.text;
         evaluationResult = JSON.parse(textRes);
         engineUsed = `Gemini AI (${modelName})`;
-        console.log(`✅ Gemini AI [${modelName}] 정밀 채점 완료!`);
+        console.log(`✅ Gemini AI [${modelName}] 비전 채점 완료!`);
         break;
       } catch (aiErr) {
         console.warn(`⚠️ 모델 [${modelName}] 에러:`, aiErr.message);
@@ -350,7 +351,7 @@ app.post('/api/evaluate', async (req, res) => {
       stepAnalysis: [
         { step: 1, text: '문제 조건 및 수식 파악', status: 'pass', note: '문제 조건 파악' },
         { step: 2, text: '계산 과정 및 공식 적용', status: isCorrect ? 'pass' : 'fail', note: isCorrect ? '계산 과정 완벽' : '계산 검토 필요' },
-        { step: 3, text: '최종 답안 도출', status: isCorrect ? 'pass' : 'fail', note: isCorrect ? `정답(${problem.standardAnswer}) 도출` : '정답과 다름' }
+        { step: 3, text: '최종 답안 도출', status: isCorrect ? 'pass' : 'fail', note: isCorrect ? `정답 도출` : '정답과 다름' }
       ],
       errorConcept: isCorrect ? null : `${problem.category} 기본 원리 점검`,
       praise: isCorrect ? `🎉 잘했습니다, ${student.name} 학생!` : `👏 노력하는 모습이 아주 멋져요!`,
