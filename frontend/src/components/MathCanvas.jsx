@@ -115,7 +115,8 @@ export default function MathCanvas({ problem, onSubmit, evaluating }) {
   const handleCanvasSubmit = () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const dataUrl = canvas.toDataURL('image/png');
+    // 캔버스 압축 전송 (jpeg / 0.7 퀄리티로 용량 1/5 축소)
+    const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
     onSubmit({
       submissionType: 'canvas',
       solutionText: '',
@@ -127,7 +128,6 @@ export default function MathCanvas({ problem, onSubmit, evaluating }) {
 
   return (
     <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-4 sm:p-6 shadow-2xl space-y-5">
-      {/* 문제 헤더 & 첨부 이미지 렌더링 */}
       <div className="space-y-3 pb-4 border-b border-slate-800">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center gap-2">
@@ -160,7 +160,6 @@ export default function MathCanvas({ problem, onSubmit, evaluating }) {
         <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight">{problem.title}</h2>
         <p className="text-sm text-slate-300 whitespace-pre-wrap leading-relaxed">{problem.question}</p>
 
-        {/* 문제 직접 업로드 사진이 있는 경우 표시 */}
         {problem.problemImage && (
           <div className="mt-3 p-3 rounded-2xl bg-slate-950 border border-purple-500/30">
             <p className="text-xs text-purple-300 font-bold mb-2 flex items-center gap-1">
@@ -177,7 +176,6 @@ export default function MathCanvas({ problem, onSubmit, evaluating }) {
 
       {activeTab === 'canvas' ? (
         <div className="space-y-4">
-          {/* 상단 툴바 & 제출 버튼 1 */}
           <div className="flex flex-wrap items-center justify-between gap-3 bg-slate-950/80 p-2.5 rounded-2xl border border-slate-800">
             <div className="flex items-center gap-2">
               <div className="flex items-center gap-1.5 p-1 rounded-xl bg-slate-900 border border-slate-800">
@@ -220,7 +218,6 @@ export default function MathCanvas({ problem, onSubmit, evaluating }) {
             </div>
           </div>
 
-          {/* 캔버스 화면 */}
           <div className="relative rounded-2xl overflow-hidden border border-slate-700/80 shadow-inner bg-slate-950">
             <canvas
               ref={canvasRef}
@@ -242,7 +239,6 @@ export default function MathCanvas({ problem, onSubmit, evaluating }) {
             )}
           </div>
 
-          {/* 하단 큼직한 AI 채점 및 피드백 받기 버튼 (시각성 최우선) */}
           <div className="pt-2">
             <button
               onClick={handleCanvasSubmit}
