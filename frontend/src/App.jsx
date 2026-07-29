@@ -55,6 +55,11 @@ export default function App() {
     }
   };
 
+  const handleProblemGenerated = async (newProblem) => {
+    await loadProblems(selectedGrade);
+    setSelectedProblem(newProblem);
+  };
+
   const handleLoginSuccess = (loggedStudent) => {
     setStudent(loggedStudent);
     setSelectedGrade(loggedStudent.grade || 4);
@@ -135,6 +140,7 @@ export default function App() {
               selectedProblem={selectedProblem}
               setSelectedProblem={setSelectedProblem}
               loading={problemsLoading}
+              onProblemGenerated={handleProblemGenerated}
             />
 
             {selectedProblem ? (
@@ -145,7 +151,7 @@ export default function App() {
               />
             ) : (
               <div className="p-12 text-center rounded-3xl bg-slate-900/60 border border-slate-800 text-slate-500">
-                선택한 학년에 등록된 문제가 없습니다. 위에서 문제를 새로 등록해 보세요!
+                선택한 학년에 등록된 문제가 없습니다. 위에서 문제를 새로 생성해 보세요!
               </div>
             )}
           </div>

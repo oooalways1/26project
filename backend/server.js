@@ -104,6 +104,83 @@ function writeDB(data) {
   } catch (err) {}
 }
 
+// 🎲 Gemini AI 교육과정 맞춤 문제 자율 생성 API
+app.post('/api/problems/generate', async (req, res) => {
+  const { grade } = req.body;
+  const numGrade = Number(grade) || 4;
+
+  const curriculumTopics = {
+    1: '100까지의 수, 한자리 수의 덧셈과 뺄셈, 여러 가지 모양',
+    2: '세 자리 수, 덧셈과 뺄셈, 곱셈구구, 길이 재기, 시계 보기',
+    3: '덧셈과 뺄셈, 평면도형, 나눗셈, 곱셈, 분수와 소수, 길이와 시간',
+    4: '큰 수, 각도, 곱셈과 나눗셈, 평면도형의 이동, 분수의 덧셈과 뺄셈, 삼각형, 소수의 덧셈과 뺄셈, 사각형, 꺾은선그래프, 다각형',
+    5: '자연수의 혼합 계산, 약수와 배수, 약분과 통분, 분수의 곱셈, 다각형의 둘레와 넓이, 소수의 곱셈, 직육면체, 평균과 가능성',
+    6: '분수의 나눗셈, 각기둥과 각뿔, 소수의 나눗셈, 비와 비율, 원의 넓이, 비례식과 비례배분, 공간과 입체, 직육면체의 부피'
+  };
+
+  const topic = curriculumTopics[numGrade] || curriculumTopics[4];
+  let newProblem = null;
+
+  if (aiClient && apiKey) {
+    try {
+      const prompt = `
+대한민국 초등학교 ${numGrade}학년 수학 교육과정(${topic})에 꼭 부합하는 재미있고 실생활 연계된 신규 문제 1개를 생성하세요.
+
+[응답 포맷 (JSON 전용)]
+{
+  "title": "문제 제목 (예: 분수의 덧셈 응용 문제)",
+  "category": "단원명 (예: 분수의 덧셈과 뺄셈)",
+  "question": "학생이 풀 수 있도록 명확하고 흥미로운 문제 지문 작성 (수식 포함)",
+  "standardAnswer": "표준 정답 (숫자 또는 간결한 수식)",
+  "explanation": "학생이 이해하기 쉬운 친절한 해설"
+}
+`;
+      const response = await aiClient.models.generateContent({
+        model: 'gemini-flash-latest',
+        contents: [prompt],
+        config: { responseMimeType: 'application/json' }
+      });
+
+      const parsed = JSON.parse(response.text);
+      newProblem = {
+        id: 'ai_gen_' + Date.now(),
+        grade: numGrade,
+        category: parsed.category || 'AI 교육과정 맞춤 문제',
+        title: parsed.title || `${numGrade}학년 AI 맞춤 문제`,
+        question: parsed.question,
+        standardAnswer: parsed.standardAnswer || '자유 풀이',
+        explanation: parsed.explanation || 'AI가 생성한 해설입니다.',
+        hints: ['문제를 잘 읽고 단계별로 풀어보세요!'],
+        isAiGenerated: true,
+        createdAt: new Date().toISOString()
+      };
+    } catch (e) {
+      console.warn('⚠️ Gemini 문제 생성 에러, 예비 문제 생성:', e.message);
+    }
+  }
+
+  if (!newProblem) {
+    newProblem = {
+      id: 'ai_gen_' + Date.now(),
+      grade: numGrade,
+      category: `${numGrade}학년 교육과정`,
+      title: `${numGrade}학년 도전 수학 문제`,
+      question: `${numGrade}학년 교육과정 단원 문제를 읽고 풀이 과정을 자세히 적어보세요!`,
+      standardAnswer: '풀이참조',
+      explanation: '생각하는 힘을 길러주는 문제입니다.',
+      hints: ['차근차근 풀어보세요!'],
+      isAiGenerated: true,
+      createdAt: new Date().toISOString()
+    };
+  }
+
+  const db = readDB();
+  db.problems.unshift(newProblem);
+  writeDB(db);
+
+  return res.json({ success: true, problem: newProblem });
+});
+
 app.get('/api/submissions', (req, res) => {
   const { studentId } = req.query;
   const db = readDB();
@@ -246,7 +323,7 @@ app.post('/api/problems', (req, res) => {
   return res.json({ success: true, problem: newProblem });
 });
 
-// Gemini AI 멀티모달 비전 채점 API (문제 이미지 사진 자율 인지 포함)
+// Gemini AI 멀티모달 비전 채점 API
 app.post('/api/evaluate', async (req, res) => {
   const { studentId, problemId, submissionType, userSolutionText, canvasImage } = req.body;
 
@@ -304,13 +381,11 @@ ${hasProblemImage ? '- 🔥 [중요]: 첨부된 문제 사진(Problem Image)의 
 
     const contents = [promptText];
 
-    // 1. 등록된 문제 이미지 사진 첨부 (Vision AI 읽기용)
     if (hasProblemImage) {
       const pBase64 = problem.problemImage.replace(/^data:image\/\w+;base64,/, '');
       contents.push({ inlineData: { mimeType: 'image/png', data: pBase64 } });
     }
 
-    // 2. 학생 손글씨 캔버스 풀이 이미지 첨부
     if (submissionType === 'canvas' && canvasImage && canvasImage.startsWith('data:image')) {
       const base64Data = canvasImage.replace(/^data:image\/\w+;base64,/, '');
       contents.push({ inlineData: { mimeType: 'image/png', data: base64Data } });

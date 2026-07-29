@@ -40,6 +40,19 @@ export async function fetchProblems(grade = null) {
   return data.problems;
 }
 
+export async function generateAiProblem(grade) {
+  const res = await fetch(`${API_BASE_URL}/api/problems/generate`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ grade })
+  });
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.error || 'AI 문제 생성에 실패했습니다.');
+  }
+  return data.problem;
+}
+
 export async function fetchSubmissions(studentId = null) {
   try {
     const url = studentId
